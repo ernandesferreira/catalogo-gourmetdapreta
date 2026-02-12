@@ -92,7 +92,7 @@ export default function CatalogClient() {
 
 
   // Keeta controls
-  const [preset, setPreset] = useState<string>("vila-emil");
+  const [preset, setPreset] = useState<string>("custom");
   const [band, setBand] = useState<KeetaKmBand>("UP_TO_2");
 
   // accordion
