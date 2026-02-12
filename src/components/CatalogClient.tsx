@@ -77,6 +77,8 @@ export default function CatalogClient() {
   // filtros
   const [query, setQuery] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [onlyActive, setOnlyActive] = useState(false);
+
 
   // Keeta controls
   const [preset, setPreset] = useState<string>("vila-emil");
@@ -167,13 +169,16 @@ const filtered = useMemo(() => {
 
   return allItems.filter((it) => {
     const matchQuery =
-      !q || it.name.toLowerCase().includes(q) || it.external_code.toLowerCase().includes(q);
+      !q ||
+      it.name.toLowerCase().includes(q) ||
+      it.external_code.toLowerCase().includes(q);
 
     const matchStock = !onlyInStock || it.stock > 0;
+    const matchActive = !onlyActive || it.status === "INACTIVE";
 
-    return matchQuery && matchStock;
+    return matchQuery && matchStock && matchActive;
   });
-}, [allItems, query, onlyInStock]);
+}, [allItems, query, onlyInStock, onlyActive]);
 
   const grouped = useMemo(() => {
     const g = groupByCategory(filtered);
@@ -338,11 +343,11 @@ const filtered = useMemo(() => {
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
-              checked={onlyInStock}
-              onChange={(e) => setOnlyInStock(e.target.checked)}
+              checked={onlyActive}
+              onChange={(e) => setOnlyActive(e.target.checked)}
               className="h-4 w-4"
             />
-            Somente em estoque
+            Mostrar apenas inativos
           </label>
         </div>
 
@@ -446,6 +451,19 @@ const filtered = useMemo(() => {
                           <div className="mb-3 flex items-start justify-between gap-3">
                             <div>
                               <h3 className="font-semibold leading-tight">{it.name}</h3>
+                              <div className="mb-2 flex items-center gap-2">
+                                <span
+                                  className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                                    it.status === "ACTIVE"
+                                      ? "bg-green-100 text-green-700"
+                                      : it.status === "INACTIVE"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-neutral-100 text-neutral-600"
+                                  }`}
+                                >
+                                  {it.status}
+                                </span>
+                              </div>
                               <p className="mt-1 text-xs text-neutral-500">
                                 Código: <span className="font-mono">{it.external_code}</span>
                               </p>
