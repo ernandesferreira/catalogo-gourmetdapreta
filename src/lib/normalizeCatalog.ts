@@ -4,8 +4,14 @@ import { calcPlatformPrice } from "@/lib/pricing";
 import { getKeetaDeliveryFeeByAvgKm, type KeetaKmBand } from "@/lib/keeta";
 
 function n(v: unknown): number {
-  return typeof v === "number" && Number.isFinite(v) ? v : 0;
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const parsed = Number(v.trim().replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+  return 0;
 }
+
 function s(v: unknown): string {
   return v == null ? "" : String(v);
 }
@@ -34,6 +40,7 @@ function buildRow(params: {
     image_url: params.image_url,
     thumbnail_url: params.thumbnail_url,
     status: params.status,
+
     price_ifood: calcPlatformPrice(basePrice, PLATFORM_FEES.ifood),
     price_99food: calcPlatformPrice(basePrice, PLATFORM_FEES.food99),
     price_keeta: calcPlatformPrice(basePrice, {
@@ -49,30 +56,31 @@ function optionToRow(
   opt: Option,
   keetaFixedFee: number
 ): CatalogItemView {
-  // imagem: option primeiro, senão item
-  const image_url = s(opt.image?.image_url ?? item.image?.image_url ?? "");
-  const thumbnail_url = s(opt.image?.thumbnail_url ?? item.image?.thumbnail_url ?? "");
-
-  // NOME: aqui usei SOMENTE o nome da option (como você pediu)
-  // Se você quiser "Item — Option", troque para:
-  // const name = item.name && opt.name ? `${item.name} — ${opt.name}` : s(opt.name ?? item.name);
   const optionName = s(opt.name ?? "").trim();
-const parentName = s(item.name ?? "").trim();
+  const parentName = s(item.name ?? "").trim();
 
-const name =
-  parentName && optionName
-    ? `${parentName} — ${optionName}`
-    : (optionName || parentName);
+  // ✅ Item — Option (como você pediu)
+  const name =
+    parentName && optionName
+      ? `${parentName} — ${optionName}`
+      : optionName || parentName;
 
-  // descrição: se option vier vazia, cai na descrição do item (bom fallback)
   const description = s(opt.description ?? "").trim() || s(item.description ?? "").trim();
 
-  // external_code: preferir option.external_code, fallback seguro
   const external_code =
     s(opt.external_code ?? "").trim() || `${s(item.external_code ?? item.id)}:${s(opt.id ?? "")}`;
 
-  const price = n(opt.price);
+  // ✅ Se option.price == 0, herda do item pai (sabores sem adicional)
+  const itemPrice = n(item.price);
+  const optPrice = n(opt.price);
+  const price = optPrice > 0 ? optPrice : itemPrice;
+
   const stock = n(opt.stock);
+
+  const image_url = s(opt.image?.image_url ?? item.image?.image_url ?? "");
+  const thumbnail_url = s(opt.image?.thumbnail_url ?? item.image?.thumbnail_url ?? "");
+
+  const status = s(opt.status ?? item.status ?? "UNKNOWN");
 
   return buildRow({
     category_name: categoryName,
@@ -83,7 +91,7 @@ const name =
     stock,
     image_url,
     thumbnail_url,
-    status: s(opt.status ?? item.status ?? "UNKNOWN"),
+    status,
     keetaFixedFee,
   });
 }
@@ -100,9 +108,24 @@ export function normalizeCatalog(payload: PartnerCatalog, band: KeetaKmBand): Ca
 
     for (const item of items) {
       const itemPrice = n(item.price);
+      const groups = item.option_groups ?? [];
 
-      // Caso 1: item com preço -> retorna item normal
-      if (itemPrice > 0) {
+      // ✅ 1) Se tem option_groups/options, explode SEMPRE
+      let pushedAnyOption = false;
+
+      for (const g of groups) {
+        const options = g.options ?? [];
+        for (const opt of options) {
+          // Se você quiser ignorar option sem nome, descomente:
+          // if (!s(opt.name).trim()) continue;
+
+          flat.push(optionToRow(categoryName, item, opt, keetaFixedFee));
+          pushedAnyOption = true;
+        }
+      }
+
+      // ✅ 2) Se não empurrou nenhuma option, aí sim cai no item normal (quando vendável)
+      if (!pushedAnyOption && itemPrice > 0) {
         flat.push(
           buildRow({
             category_name: categoryName,
@@ -113,25 +136,10 @@ export function normalizeCatalog(payload: PartnerCatalog, band: KeetaKmBand): Ca
             stock: n(item.stock),
             image_url: s(item.image?.image_url ?? ""),
             thumbnail_url: s(item.image?.thumbnail_url ?? ""),
-            status: s(item.status ?? "UNKNOWN"), // 👈 novo
+            status: s(item.status ?? "UNKNOWN"),
             keetaFixedFee,
           })
         );
-        continue;
-      }
-
-      // Caso 2: item.price == 0 -> explodir options (option_groups/options)
-      const groups = item.option_groups ?? [];
-      for (const g of groups) {
-        const options = g.options ?? [];
-        for (const opt of options) {
-          const optPrice = n(opt.price);
-
-          // se option também não tiver preço, ignora
-          if (optPrice <= 0) continue;
-
-          flat.push(optionToRow(categoryName, item, opt, keetaFixedFee));
-        }
       }
     }
   }
