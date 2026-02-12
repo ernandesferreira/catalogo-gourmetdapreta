@@ -20,6 +20,7 @@ export type Option = {
   external_code?: string | null;
   price?: number | null;
   stock?: number | null;
+  status?: string | null;
   image?: ItemImage | null;
 };
 
@@ -36,6 +37,7 @@ export type Item = {
   external_code?: string | null;
   price?: number | null;
   stock?: number | null;
+  status?: string | null;
   image?: ItemImage | null;
 
   option_groups?: OptionGroup[];
@@ -50,7 +52,7 @@ export type CatalogItemView = {
   image_url: string;
   thumbnail_url: string;
   category_name: string;
-
+  status: string;
   price_ifood: number;
   price_99food: number;
   price_keeta: number;

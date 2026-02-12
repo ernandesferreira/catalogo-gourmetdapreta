@@ -19,6 +19,7 @@ function buildRow(params: {
   stock: number;
   image_url: string;
   thumbnail_url: string;
+  status: string;
   keetaFixedFee: number;
 }): CatalogItemView {
   const basePrice = params.price;
@@ -32,7 +33,7 @@ function buildRow(params: {
     stock: params.stock,
     image_url: params.image_url,
     thumbnail_url: params.thumbnail_url,
-
+    status: params.status,
     price_ifood: calcPlatformPrice(basePrice, PLATFORM_FEES.ifood),
     price_99food: calcPlatformPrice(basePrice, PLATFORM_FEES.food99),
     price_keeta: calcPlatformPrice(basePrice, {
@@ -82,6 +83,7 @@ const name =
     stock,
     image_url,
     thumbnail_url,
+    status: s(opt.status ?? item.status ?? "UNKNOWN"),
     keetaFixedFee,
   });
 }
@@ -111,6 +113,7 @@ export function normalizeCatalog(payload: PartnerCatalog, band: KeetaKmBand): Ca
             stock: n(item.stock),
             image_url: s(item.image?.image_url ?? ""),
             thumbnail_url: s(item.image?.thumbnail_url ?? ""),
+            status: s(item.status ?? "UNKNOWN"), // 👈 novo
             keetaFixedFee,
           })
         );
