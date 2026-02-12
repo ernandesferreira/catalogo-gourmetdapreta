@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import type { CatalogItemView } from "@/lib/types";
 
+
+type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE" | "MISSING";
+
 type KeetaKmBand = "UP_TO_2" | "FROM_2_TO_4" | "ABOVE_4";
 
 type ApiResponse = { items: CatalogItemView[]; km_band?: KeetaKmBand; keeta_fee?: number };
@@ -26,6 +29,12 @@ function formatBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function statusLabel(status: string) {
+  if (status === "ACTIVE") return "Ativo";
+  if (status === "INACTIVE") return "Inativo";
+  if (status === "MISSING") return "Em falta";
+  return status;
+}
 
 function downloadBlob(filename: string, blob: Blob) {
   const url = URL.createObjectURL(blob);
@@ -78,6 +87,7 @@ export default function CatalogClient() {
   const [query, setQuery] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
   const [onlyActive, setOnlyActive] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
 
 
   // Keeta controls
@@ -174,11 +184,19 @@ const filtered = useMemo(() => {
       it.external_code.toLowerCase().includes(q);
 
     const matchStock = !onlyInStock || it.stock > 0;
-    const matchActive = !onlyActive || it.status === "INACTIVE";
+    
+    const matchStatus =
+      statusFilter === "ALL"
+    ? true
+    : statusFilter === "ACTIVE"
+    ? it.status === "ACTIVE"
+    : statusFilter === "INACTIVE"
+    ? it.status === "INACTIVE"
+    : it.status === "MISSING";
 
-    return matchQuery && matchStock && matchActive;
+    return matchQuery && matchStock && matchStatus;
   });
-}, [allItems, query, onlyInStock, onlyActive]);
+}, [allItems, query, onlyInStock, statusFilter]);
 
   const grouped = useMemo(() => {
     const g = groupByCategory(filtered);
@@ -340,15 +358,17 @@ const filtered = useMemo(() => {
         </div>
 
         <div className="flex items-end sm:col-span-1">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={onlyActive}
-              onChange={(e) => setOnlyActive(e.target.checked)}
-              className="h-4 w-4"
-            />
-            Mostrar apenas inativos
-          </label>
+          <label className="block text-xs font-semibold text-neutral-600">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+              className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+            >
+              <option value="ALL">Todos</option>
+              <option value="ACTIVE">Ativos</option>
+              <option value="INACTIVE">Inativos</option>
+              <option value="EM_FALTA">Em falta</option>
+            </select>
         </div>
 
         {/* Preset */}
@@ -456,12 +476,14 @@ const filtered = useMemo(() => {
                                   className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
                                     it.status === "ACTIVE"
                                       ? "bg-green-100 text-green-700"
+                                      : it.status === "MISSING"
+                                      ? "bg-yellow-100 text-yellow-800"
                                       : it.status === "INACTIVE"
                                       ? "bg-red-100 text-red-700"
                                       : "bg-neutral-100 text-neutral-600"
                                   }`}
                                 >
-                                  {it.status}
+                                  {statusLabel(it.status)}
                                 </span>
                               </div>
                               <p className="mt-1 text-xs text-neutral-500">
