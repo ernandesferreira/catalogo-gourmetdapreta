@@ -553,24 +553,36 @@ async function fetchCatalog(currentBand: KeetaKmBand) {
 
                           {/* preços */}
                           <div className="mt-3 rounded-xl bg-neutral-50 p-3 text-sm">
+                            {/* BASE */}
                             <div className="flex items-center justify-between">
-                              <span className="text-neutral-600">Base</span>
-                              <span className="font-semibold">{formatBRL(it.price)}</span>
+                              <span className="font-medium text-purple-600">Base</span>
+                              <span className="font-bold text-purple-700">
+                                {formatBRL(it.price)}
+                              </span>
                             </div>
 
-                            <div className="mt-1 flex items-center justify-between">
-                              <span className="text-neutral-600">iFood</span>
-                              <span className="font-semibold">{formatBRL(it.price_ifood)}</span>
+                            {/* IFOOD */}
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-red-600">iFood</span>
+                              <span className="font-bold text-red-700">
+                                {formatBRL(it.price_ifood)}
+                              </span>
                             </div>
 
-                            <div className="mt-1 flex items-center justify-between">
-                              <span className="text-neutral-600">99Food</span>
-                              <span className="font-semibold">{formatBRL(it.price_99food)}</span>
+                            {/* 99FOOD */}
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-yellow-600">99Food</span>
+                              <span className="font-bold text-yellow-700">
+                                {formatBRL(it.price_99food)}
+                              </span>
                             </div>
 
-                            <div className="mt-1 flex items-center justify-between">
-                              <span className="text-neutral-600">Keeta (taxa {formatBRL(state.status==="success"?state.keeta_fee:0)})</span>
-                              <span className="font-semibold">{formatBRL(it.price_keeta)}</span>
+                            {/* KEETA */}
+                            <div className="flex items-center justify-between">
+                              <span className="font-medium text-green-600">Keeta</span>
+                              <span className="font-bold text-green-700">
+                                {formatBRL(it.price_keeta)}
+                              </span>
                             </div>
                           </div>
 
