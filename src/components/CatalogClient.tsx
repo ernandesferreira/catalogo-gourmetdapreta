@@ -544,7 +544,7 @@ async function fetchCatalog(currentBand: KeetaKmBand) {
                           </div>
 
                           {it.description ? (
-                            <p className="text-sm text-neutral-700 line-clamp-3">
+                            <p className="text-sm text-neutral-700 whitespace-pre-wrap">
                               {it.description}
                             </p>
                           ) : (
