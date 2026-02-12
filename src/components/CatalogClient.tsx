@@ -86,8 +86,9 @@ export default function CatalogClient() {
   // filtros
   const [query, setQuery] = useState("");
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const [onlyActive, setOnlyActive] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+
 
 
   // Keeta controls
@@ -167,6 +168,7 @@ async function fetchCatalog(currentBand: KeetaKmBand) {
     }
   }, [preset]);
 
+
   const feeLabel = useMemo(() => {
     const found = KM_BANDS.find((x) => x.value === band);
     return found ? `${found.label} (taxa Keeta: ${formatBRL(found.fee)})` : "";
@@ -174,10 +176,28 @@ async function fetchCatalog(currentBand: KeetaKmBand) {
 
   const allItems = state.status === "success" ? state.items : [];
 
-const filtered = useMemo(() => {
+  const allCategoryNames = useMemo(() => {
+    const set = new Set<string>();
+    for (const it of allItems) {
+      if (it.category_name) set.add(it.category_name);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b));
+  }, [allItems]);
+
+  
+  // Se você filtrar status/busca e a categoria selecionada deixar de existir, pode ficar “vazio” e parecer bug.
+  useEffect(() => {
+    if (categoryFilter !== "ALL" && !allCategoryNames.includes(categoryFilter)) {
+      setCategoryFilter("ALL");
+    }
+  }, [allCategoryNames, categoryFilter]);
+
+  const filtered = useMemo(() => {
   const q = query.trim().toLowerCase();
+  
 
   return allItems.filter((it) => {
+    const matchCategory = categoryFilter === "ALL" || it.category_name === categoryFilter;
     const matchQuery =
       !q ||
       it.name.toLowerCase().includes(q) ||
@@ -194,9 +214,13 @@ const filtered = useMemo(() => {
     ? it.status === "INACTIVE"
     : it.status === "MISSING";
 
-    return matchQuery && matchStock && matchStatus;
+    return matchQuery && matchStock && matchStatus && matchCategory;
   });
-}, [allItems, query, onlyInStock, statusFilter]);
+
+  
+
+
+}, [allItems, query, onlyInStock, statusFilter, categoryFilter]);
 
   const grouped = useMemo(() => {
     const g = groupByCategory(filtered);
@@ -356,8 +380,23 @@ const filtered = useMemo(() => {
             className="mt-1 w-full rounded-xl border px-3 py-2 text-sm outline-none focus:ring-2"
           />
         </div>
+        <div className="sm:col-span-1">
+          <label className="block text-xs font-semibold text-neutral-600">Categoria</label>
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value)}
+            className="mt-1 w-full rounded-xl border px-3 py-2 text-sm"
+          >
+            <option value="ALL">Todas</option>
+            {allCategoryNames.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
 
-        <div className="flex items-end sm:col-span-1">
+        <div className="sm:col-span-1">
           <label className="block text-xs font-semibold text-neutral-600">Status</label>
             <select
               value={statusFilter}
@@ -369,10 +408,11 @@ const filtered = useMemo(() => {
               <option value="INACTIVE">Inativos</option>
               <option value="EM_FALTA">Em falta</option>
             </select>
+            <p className="mt-1 text-[11px] text-neutral-500">Selecione o status do produto</p>
         </div>
 
         {/* Preset */}
-        <div className="sm:col-span-2">
+        <div className="sm:col-span-1">
           <label className="block text-xs font-semibold text-neutral-600">
             Preset (loja/bairro)
           </label>
