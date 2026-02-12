@@ -24,7 +24,7 @@ export const PLATFORM_FEES: Record<Platform, PlatformFeeConfig> = {
   },
   keeta: {
     label: "Keeta",
-    percentTotal: 0.174, // 12% + 3,2% = 17,4%
+    percentTotal: 0.235, // 9,9% + 3,2% + subsidio frete = 23,5%
     fixedFee: 0,       // taxa entrega KM (fixa, conforme sua regra atual)
     rounding: "END_90",
   },
